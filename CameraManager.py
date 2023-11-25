@@ -7,13 +7,24 @@ import easyocr
 class CameraManager:
     def __init__(self, ocrLanguages) -> None:
         self.ocrLanguages = ocrLanguages # https://www.jaided.ai/easyocr/
+    
+    def takePhoto(self):
+        cameraPort = 0
+        camera = cv2.VideoCapture(cameraPort)
+        result, image = camera.read()
+        if result:
+            return image
+        else:
+            print("No image detected")
+            return None
 
     def getVehiclePlateNumber(self, imageBGR):
         imageGray = cv2.cvtColor(imageBGR, cv2.COLOR_BGR2GRAY)
         imageGrayFiltered = self.filterNoises(imageGray)
         plateMask = self.findPlateMask(imageGrayFiltered)
         if plateMask is None:
-            print("failed to read plate number / trying again")
+            print("failed to read plate number")
+            return None
         plateImage = self.cropPlate(imageGray, plateMask)
         plateNumber = self.readPlateNumber(plateImage)
         return plateNumber
