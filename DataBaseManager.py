@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, select, func, desc, MetaData, Table
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean
 from datetime import datetime
 
 
@@ -23,11 +23,12 @@ class Parking_lot(Base):
     Exit_time = Column(DateTime)
     Parking_time = Column(Integer)
     Fee = Column(Float)
+    IsPaid = Column(Boolean)
 
 
     def __repr__(self):
-        return "<Parking_lot(ID='{0}', Registration_number={1}, Entrance_time={2}, Exit_time={3}, Parking_time={4}, Fee={5})>".format(
-            self.ID, self.Registration_number, self.Entrance_time, self.Exit_time, self.Parking_time, self.Fee)
+        return "<Parking_lot(ID='{0}', Registration_number={1}, Entrance_time={2}, Exit_time={3}, Parking_time={4}, Fee={5}, IsPaid={6})>".format(
+            self.ID, self.Registration_number, self.Entrance_time, self.Exit_time, self.Parking_time, self.Fee, self.IsPaid)
     
 # ------------------------------------------------------------------------------------
 
@@ -47,7 +48,8 @@ class ParkingDB:
                                                 Entrance_time = datetime.now(),
                                                 Exit_time = None,
                                                 Parking_time = None,
-                                                Fee = None)
+                                                Fee = None,
+                                                IsPaid = False)
         result = engine.execute(ins)
 
 
@@ -70,10 +72,20 @@ class ParkingDB:
         return minutes
 
 
-    def updateFee(self, id, minutes, price_per_hour = 2):
+    def updatePaymentStatus(self, registration, paid = True):
         if id > self.getTableLength():
             return None
         
+        upd_payment_status = self.Parking_lot_table.update().\
+                    where(self.Parking_lot_table.columns.ID == id).\
+                    values(IsPaid = paid)
+        engine.execute(upd_payment_status)
+
+
+    def updateFee(self, id, minutes, price_per_hour = 2):
+        if id > self.getTableLength():
+            return None
+
         fee = round(minutes / 60 * price_per_hour, 2)
 
         upd_fee = self.Parking_lot_table.update().\
