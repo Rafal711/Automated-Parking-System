@@ -43,14 +43,18 @@ class ParkingDB:
 
     # Database handling functions
     def addCarEntryRecord(self, registration):
-        ins = self.Parking_lot_table.insert().values(ID = self.getTableLength() + 1,
-                                                Registration_number = registration,
-                                                Entrance_time = datetime.now(),
-                                                Exit_time = None,
-                                                Parking_time = None,
-                                                Fee = None,
-                                                IsPaid = False)
-        result = engine.execute(ins)
+        if not self.isCarParked(registration):
+            ins = self.Parking_lot_table.insert().values(ID = self.getTableLength() + 1,
+                                                    Registration_number = registration,
+                                                    Entrance_time = datetime.now(),
+                                                    Exit_time = None,
+                                                    Parking_time = None,
+                                                    Fee = None,
+                                                    IsPaid = False)
+            result = engine.execute(ins)
+        else:
+            print("Car with given registration number is already parked!")
+            return None
 
 
     def updateParkingTime(self, id):
@@ -133,6 +137,19 @@ class ParkingDB:
             return None
 
 
+    def isCarParked(self, registration):
+        id = self.findLastIdByRegistration(registration)
+
+        if id is not None:
+            mapper_stmt = select(self.Parking_lot_table.columns.ID).\
+                    where(self.Parking_lot_table.columns.ID == id and self.Parking_lot_table.columns.Exit_time == None)
+            result = engine.execute(mapper_stmt).fetchall()
+
+            if result:
+                return True
+        return False
+
+
     def getFee(self, registration):
         id = self.findLastIdByRegistration(registration)
 
@@ -153,7 +170,7 @@ class ParkingDB:
         mapper_stmt = select(self.Parking_lot_table.columns.Parking_time).\
                     where(self.Parking_lot_table.columns.ID == id)
         
-        result =  engine.execute(mapper_stmt).fetchall()[0][0]
+        result =  engine.execute(mapper_stmt).fetchall()
 
         if result:
             return result[0][0]
@@ -164,3 +181,15 @@ class ParkingDB:
     def getParkingTimeInHours(self, registration):
         minutes = self.getParkingTimeInMinutes(registration)
         return round(minutes / 60, 2)
+
+
+    def getNumberOfParkedCars(self):
+        mapper_stmt = select(func.count(self.Parking_lot_table.columns.ID)).\
+                    where(self.Parking_lot_table.columns.Exit_time == None)
+
+        result =  engine.execute(mapper_stmt).fetchall()
+
+        if result:
+            return result[0][0]
+        else:
+            return None
