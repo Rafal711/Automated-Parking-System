@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatic Parking System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url('/static/images/gate.jpg'); /* Replace with the actual URL or path of your image */
+            background-size: cover;
+            background-repeat: no-repeat;
+            text-align: center;
+            color: #fff; /* Set text color to contrast with the background */
+            overflow: hidden; /* Hide scrollbars */
+        }
+
+        header {
+            background-color: rgba(51, 51, 51, 0.7); /* Add a semi-transparent overlay for better text visibility */
+            padding: 2em;
+            font-size: 2em; /* Bigger font size for the header */
+            height: 100vh; /* Set header height to full viewport height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        a {
+            text-decoration: none; /* Remove default underline for the anchor tag */
+        }
+
+        button {
+            padding: 1em 2em;
+            font-size: 1em;
+            background-color: #ed7f25; /* Set the button color to #ed7f25 */
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            margin-top: 1em; /* Add margin to separate the button from the header */
+            border-radius: 5px; /* Add border-radius for rounded corners */
+            transition: background-color 0.3s ease; /* Smooth transition for background color */
+        }
+
+        button:hover {
+            background-color: #c96f22; /* Adjust the hover color if needed */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Automatic Parking System</h1>
+        <a href="{{ url_for('show_stats') }}"><button>Show Statistics</button></a>
+    </header>
+</body>
+</html>

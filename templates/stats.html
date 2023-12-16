@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatic Parking System Statistics</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: url('/static/images/gate.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            backdrop-filter: blur(10px); /* Increased blur amount */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            justify-content: flex-start;
+            position: relative;
+        }
+
+        h1 {
+            color: #fff; /* White text for higher contrast */
+            text-align: center;
+            margin-top: 50px; /* Adjust as needed */
+            font-size: 3em; /* Adjust the font size as needed */
+        }
+
+        .home-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #ed7f25;
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none; /* Remove default underline for anchor tags */
+            transition: background-color 0.3s ease; /* Smooth transition effect */
+        }
+
+        .home-button:hover {
+            background-color: #c96f22; /* Change the color on hover */
+        }
+
+        .table-title {
+            color: #fff;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.5em;
+        }
+
+        .last-refresh {
+            color: #fff;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 80%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            overflow-x: auto;
+            color: #fff;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #333;
+        }
+
+        tbody {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .refresh-button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #ed7f25; /* Same color as home button */
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .refresh-button:hover {
+            background-color: #c96f22; /* Change the color on hover */
+        }
+    </style>
+</head>
+<body>
+    <a href="{{ url_for('home_screen') }}" class="home-button">Home</a>
+    <h1>Parking Statistics</h1>
+    
+    <p class="table-title">Currently parked cars</p>
+
+    <p class="last-refresh">Last Refresh: {{ last_refresh_time }}</p>
+
+    {% for table in table_html %}
+        {{ table | safe }}
+    {% endfor %}
+
+    <button class="refresh-button" onclick="location.reload()">Refresh Data</button>
+</body>
+</html>

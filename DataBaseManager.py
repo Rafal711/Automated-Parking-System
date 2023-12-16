@@ -46,7 +46,7 @@ class ParkingDB:
         if not self.isCarParked(registration):
             ins = self.Parking_lot_table.insert().values(ID = self.getTableLength() + 1,
                                                     Registration_number = registration,
-                                                    Entrance_time = datetime.now(),
+                                                    Entrance_time = datetime.now().replace(microsecond=0),
                                                     Exit_time = None,
                                                     Parking_time = None,
                                                     Fee = None,
@@ -107,7 +107,7 @@ class ParkingDB:
         if id is not None:
             upd_exit = self.Parking_lot_table.update().\
                     where(self.Parking_lot_table.columns.ID == id).\
-                    values(Exit_time = datetime.now())
+                    values(Exit_time = datetime.now().replace(microsecond=0))
 
             engine.execute(upd_exit)
         else:
@@ -193,3 +193,12 @@ class ParkingDB:
             return result[0][0]
         else:
             return None
+
+    def getParkedCarsTable(self):
+        mapper_stmt = select([self.Parking_lot_table.columns.Registration_number, self.Parking_lot_table.columns.Entrance_time]).\
+                    where(self.Parking_lot_table.columns.Exit_time == None)
+
+        results =  engine.execute(mapper_stmt)
+        columns = results.keys()
+        results = results.fetchall()
+        return results, columns
