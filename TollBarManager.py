@@ -4,7 +4,7 @@
 
 from enum import Enum
 import RPi.GPIO as GPIO
-from time import sleep
+import time
 
 class SensorLocation(Enum):
     BeforeTollBar = 0
@@ -37,6 +37,9 @@ class TollBarManager:
                         Sensor(sensorUnderTollBarPort, SensorLocation.UnderTollBar),
                         Sensor(sensorBehindTollBarPort, SensorLocation.BehindTollBar)]
         self.barrier = Barrier(barrierPort)
+        self.openGateTime = 7 # time in sec
+        self.startTimerForBarrier = 0
+        self.endTimer = 0
 
     def __del__(self):
         GPIO.cleanup()
@@ -53,29 +56,40 @@ class TollBarManager:
 
     def isVehicleBeforeTollBar(self):
         return (self.getSensorByLocation(SensorLocation.BeforeTollBar).value and 
-                not self.getSensorByLocation(SensorLocation.UnderTollBar).value and
-                not self.getSensorByLocation(SensorLocation.BehindTollBar).value)
+                not self.getSensorByLocation(SensorLocation.UnderTollBar).value)
     
     def isVehicleUnderTollBar(self):
         return self.getSensorByLocation(SensorLocation.UnderTollBar).value
     
     def isVehicleBehindTollBar(self):
+        return (not self.getSensorByLocation(SensorLocation.UnderTollBar).value and
+                self.getSensorByLocation(SensorLocation.BehindTollBar).value)
+    
+    def isThereNoVehicleNearTollBar(self):
         return (not self.getSensorByLocation(SensorLocation.BeforeTollBar).value and 
                 not self.getSensorByLocation(SensorLocation.UnderTollBar).value and
-                self.getSensorByLocation(SensorLocation.BehindTollBar).value)
+                not self.getSensorByLocation(SensorLocation.BehindTollBar).value)
     
     def updateSensors(self):
         for sensor in self.sensors:
             sensor.value = GPIO.input(sensor.port)
     
     def openBarrier(self):
+        if self.barrier.state == BarrierState.Open:
+            return
         servo = GPIO.PWM(self.barrier.port, 50) # GPIO as PWM output, with 50Hz frequency
         servo.start(0) # generate PWM signal with 7.5% duty cycle
         servo.ChangeDutyCycle(7.5) # change duty cycle for getting the servo position to 90
         self.barrier.state = BarrierState.Open
+        self.startTimerForBarrier = time.perf_counter()
+
     
     def closeBarrier(self):
-        servo = GPIO.PWM(self.barrier.port, 50) # GPIO as PWM output, with 50Hz frequency
-        servo.start(0) # generate PWM signal with 7.5% duty cycle
-        servo.ChangeDutyCycle(-7.5) # change duty cycle for getting the servo position to -90
-        self.barrier.state = BarrierState.Closed
+        if self.barrier.state == BarrierState.Closed:
+            return
+        if time.perf_counter() - self.startTimerForBarrier >= self.openGateTime:
+            servo = GPIO.PWM(self.barrier.port, 50) # GPIO as PWM output, with 50Hz frequency
+            servo.start(0) # generate PWM signal with 7.5% duty cycle
+            servo.ChangeDutyCycle(-7.5) # change duty cycle for getting the servo position to -90
+            self.barrier.state = BarrierState.Closed
+            self.startTimerForBarrier = 0
