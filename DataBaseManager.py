@@ -77,13 +77,18 @@ class ParkingDB:
 
 
     def updatePaymentStatus(self, registration, paid = True):
+        id = self.findLastIdByRegistration(registration)
         if id > self.getTableLength():
             return None
         
-        upd_payment_status = self.Parking_lot_table.update().\
-                    where(self.Parking_lot_table.columns.ID == id).\
-                    values(IsPaid = paid)
-        engine.execute(upd_payment_status)
+        if id is not None:
+            upd_payment_status = self.Parking_lot_table.update().\
+                        where(self.Parking_lot_table.columns.ID == id).\
+                        values(IsPaid = paid)
+            engine.execute(upd_payment_status)
+        else:
+            print("W bazie nie istnieje dany numer")
+            return None
 
 
     def updateFee(self, id, minutes, price_per_hour = 2):
