@@ -23,6 +23,8 @@ class AutomatedParkingSystem:
             if self.barrierHandler.barrier.state == BarrierState.Open:
                 if not self.barrierHandler.isVehicleUnderTollBar():
                     self.barrierHandler.closeBarrier()
+                else:
+                    self.barrierHandler.openBarrier()
                 if self.barrierHandler.isVehicleBehindTollBar():
                     self.parkingDb.addCarEntryRecord(vehiclePlateNumber)
             self.barrierHandler.updateSensors()
