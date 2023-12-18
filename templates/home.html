@@ -15,16 +15,18 @@
             text-align: center;
             color: #fff; /* Set text color to contrast with the background */
             overflow: hidden; /* Hide scrollbars */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100vh;
         }
 
         header {
             background-color: rgba(51, 51, 51, 0.7); /* Add a semi-transparent overlay for better text visibility */
             padding: 2em;
             font-size: 2em; /* Bigger font size for the header */
-            height: 100vh; /* Set header height to full viewport height */
             display: flex;
-            flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
         }
 
@@ -39,13 +41,29 @@
             color: #fff;
             border: none;
             cursor: pointer;
-            margin-top: 1em; /* Add margin to separate the button from the header */
             border-radius: 5px; /* Add border-radius for rounded corners */
             transition: background-color 0.3s ease; /* Smooth transition for background color */
         }
 
         button:hover {
             background-color: #c96f22; /* Adjust the hover color if needed */
+        }
+
+        table {
+            width: 60%; /* Set the table width to 60% of the viewport */
+            margin: 2em auto 5em; /* Add margin to the top and bottom of the table, center horizontally */
+            color: #fff; /* Set text color for table content */
+            font-size: 1.5em; /* Increase font size for table text */
+        }
+
+        th, td {
+            padding: 1em;
+            border: 1px solid #fff;
+            background-color: #444; /* Add background color to cells */
+        }
+
+        th {
+            background-color: #333;
         }
     </style>
 </head>
@@ -54,5 +72,18 @@
         <h1>Automatic Parking System</h1>
         <a href="{{ url_for('show_stats') }}"><button>Show Statistics</button></a>
     </header>
+
+    <table>
+        <tr>
+            <th>Number of Parked Cars</th>
+            <th>Number of Free Spaces</th>
+            <th>Occupancy Percentage</th>
+        </tr>
+        <tr>
+            <td>{{ parked }}</td>
+            <td>{{ free }}</td>
+            <td>{{ percentage }}%</td>
+        </tr>
+    </table>
 </body>
 </html>
