@@ -7,6 +7,7 @@ from datetime import datetime
 # ------------------------------------------------------------------------------------
 
 # modify this database address to what you have set in PgAdmin
+# "db_driver://user:password@ip_adrress:port/db_name"
 db_string = "postgresql://postgres:admin@localhost:5432/Parking_lot_database"
 
 engine = create_engine(db_string)

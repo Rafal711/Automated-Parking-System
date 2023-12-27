@@ -1,6 +1,7 @@
 import unittest
 from CameraManager import CameraManager
 from TollBarManager import SensorLocation, Sensor, BarrierState, Barrier, TollBarManager
+from AutomatedParkingSystem import AutomatedParkingSystem
 import Mock.GPIO as GPIO
 from contextlib import contextmanager
 import threading
@@ -8,7 +9,6 @@ import _thread
 import time
 import cv2
 import os
-import signal
 
 
 # source: https://stackoverflow.com/questions/366682/how-to-limit-execution-time-of-a-function-call/37648512#37648512
@@ -52,18 +52,18 @@ class TestTollBarManager(unittest.TestCase):
         barrierManager = TollBarManager()
         # Car before barrier
         barrierManager.getSensorByLocation(SensorLocation.BeforeTollBar).value = True
-        self.assertTrue(barrierManager.isVehicleBeforeTollBar, "No vehicle before barrier")
+        self.assertTrue(barrierManager.isVehicleBeforeTollBar(), "No vehicle before barrier")
         # Car under barrier
         barrierManager.getSensorByLocation(SensorLocation.BeforeTollBar).value = False
         barrierManager.getSensorByLocation(SensorLocation.UnderTollBar).value = True
-        self.assertTrue(barrierManager.isVehicleUnderTollBar, "No vehicle under barrier")
+        self.assertTrue(barrierManager.isVehicleUnderTollBar(), "No vehicle under barrier")
         # Car entered the parking lot
         barrierManager.getSensorByLocation(SensorLocation.UnderTollBar).value = False
         barrierManager.getSensorByLocation(SensorLocation.BehindTollBar).value = True
-        self.assertTrue(barrierManager.isVehicleBehindTollBar, "No vehicle behind barrier")
+        self.assertTrue(barrierManager.isVehicleBehindTollBar(), "No vehicle behind barrier")
         # No car near barrier
         barrierManager.getSensorByLocation(SensorLocation.BehindTollBar).value = False
-        self.assertTrue(barrierManager.isThereNoVehicleNearTollBar, "Detected Vehicle near barrier")
+        self.assertTrue(barrierManager.isThereNoVehicleNearTollBar(), "Detected Vehicle near barrier")
     
     def testBarrierAsServoLogic(self):
         barrierManager = TollBarManager()
@@ -85,6 +85,44 @@ class TestTollBarManager(unittest.TestCase):
            barrierManager.closeBarrier()
         self.assertEqual(barrierManager.barrier.postition, 90) # barrier should not be closed
         
+
+class TestAutomatedParkingSystem(unittest.TestCase):
+    def testCarEntersParkingLotScenario(self):
+        automatedParkingSys = AutomatedParkingSystem()
+        barrierManager = automatedParkingSys.barrierHandler
+
+        # scenario step 1: No car near barrier
+        automatedParkingSys.executeEntranceGateLogicOnceWithDummyCar()
+        self.assertEqual(barrierManager.barrier.state, BarrierState.Closed)
+        #TODO no new car in DB
+
+        # scenario step 2: Car before barrier
+        barrierManager.getSensorByLocation(SensorLocation.BeforeTollBar).value = True
+        dummyCarPlateNumber1 = 'PO 156VN'
+        automatedParkingSys.executeEntranceGateLogicOnceWithDummyCar(dummyCarPlateNumber1)
+        self.assertEqual(barrierManager.barrier.postition, 90)
+        self.assertEqual(barrierManager.barrier.state, BarrierState.Open)
+        #TODO no new car in DB
+
+        # scenario step 3: Car under barrier (new car before barrier, SensorLocation.BeforeTollBar still true)
+        barrierManager.getSensorByLocation(SensorLocation.UnderTollBar).value = True
+        automatedParkingSys.executeEntranceGateLogicOnceWithDummyCar(dummyCarPlateNumber1)
+        self.assertEqual(barrierManager.barrier.postition, 90)
+        self.assertEqual(barrierManager.barrier.state, BarrierState.Open)
+        #TODO no new car in DB
+
+        # scenario step 4: Car behind barrier
+        barrierManager.getSensorByLocation(SensorLocation.UnderTollBar).value = False
+        barrierManager.getSensorByLocation(SensorLocation.BehindTollBar).value = True
+        # Wait the preset number of seconds (fulfil timer condition)
+        time.sleep(barrierManager.openGateTime)
+        automatedParkingSys.executeEntranceGateLogicOnceWithDummyCar(dummyCarPlateNumber1)
+        self.assertEqual(barrierManager.barrier.postition, 0)
+        self.assertEqual(barrierManager.barrier.state, BarrierState.Closed)
+        #TODO new car in DB, compare with dummyCarPlateNumber1
+
+        #TODO scenario step 5: new Car behind barrier [alternative]
+
 
 if __name__ == '__main__':
     unittest.main()

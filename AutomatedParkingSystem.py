@@ -40,3 +40,28 @@ class AutomatedParkingSystem:
                 if self.barrierHandler.isVehicleBehindTollBar():
                     self.parkingDb.releaseCarFromDb(vehiclePlateNumber)
             self.barrierHandler.updateSensors()
+    
+    def executeEntranceGateLogicOnceWithDummyCar(self, dummyVehiclePlateNumber=None):
+        executeOnce = True
+        while executeOnce:
+            if self.barrierHandler.barrier.state == BarrierState.Closed and self.barrierHandler.isVehicleBeforeTollBar():
+                self.barrierHandler.openBarrier()
+            if self.barrierHandler.barrier.state == BarrierState.Open:
+                self.barrierHandler.closeBarrier()
+                if self.barrierHandler.isVehicleBehindTollBar():
+                    self.parkingDb.addCarEntryRecord(dummyVehiclePlateNumber)
+            self.barrierHandler.updateSensors()
+            executeOnce = False
+    
+    def executeExitGateLogicOnceWithDummyCar(self, dummyVehiclePlateNumber=None):
+        executeOnce = True
+        while executeOnce:
+            if self.barrierHandler.barrier.state == BarrierState.Closed and self.barrierHandler.isVehicleBeforeTollBar():
+                if self.parkingDb.wasFeePaid():
+                    self.barrierHandler.openBarrier()
+            if self.barrierHandler.barrier.state == BarrierState.Open:
+                self.barrierHandler.closeBarrier()
+                if self.barrierHandler.isVehicleBehindTollBar():
+                    self.parkingDb.releaseCarFromDb(dummyVehiclePlateNumber)
+            self.barrierHandler.updateSensors()
+            executeOnce = False
