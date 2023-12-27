@@ -25,10 +25,12 @@ class Barrier():
     def __init__(self, portGPIO) -> None:
         self.port = portGPIO
         self.state = BarrierState.Closed
+        self.postition = 0
 
 class TollBarManager:
     def __init__(self, sensorBeforeTollBarPort=17, sensorUnderTollBarPort=18, sensorBehindTollBarPort=19, barrierPort=20) -> None:
         GPIO.setmode(GPIO.BCM)
+        # SETUP SENSORS
         GPIO.setup(sensorBeforeTollBarPort, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(sensorUnderTollBarPort, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(sensorBehindTollBarPort, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -36,10 +38,15 @@ class TollBarManager:
         self.sensors = [Sensor(sensorBeforeTollBarPort, SensorLocation.BeforeTollBar),
                         Sensor(sensorUnderTollBarPort, SensorLocation.UnderTollBar),
                         Sensor(sensorBehindTollBarPort, SensorLocation.BehindTollBar)]
+        # SETUP BARRIER AND SERVO
+        GPIO.setup(self.barrier.port, GPIO.OUT)
+        self.servo = GPIO.PWM(self.barrier.port, 50) # GPIO as PWM output, with 50Hz frequency
         self.barrier = Barrier(barrierPort)
         self.openGateTime = 7 # time in sec
         self.startTimerForBarrier = 0
         self.endTimer = 0
+        self.minDuty = 5
+        self.maxDuty = 10
 
     def __del__(self):
         GPIO.cleanup()
@@ -74,22 +81,30 @@ class TollBarManager:
         for sensor in self.sensors:
             sensor.value = GPIO.input(sensor.port)
     
+    def deg2duty(self, deg):
+        return (deg - 0) * (self.maxDuty- self.minDuty) / 180 + self.minDuty
+    
     def openBarrier(self):
         if self.barrier.state == BarrierState.Open:
             return
-        servo = GPIO.PWM(self.barrier.port, 50) # GPIO as PWM output, with 50Hz frequency
-        servo.start(0) # generate PWM signal with 7.5% duty cycle
-        servo.ChangeDutyCycle(7.5) # change duty cycle for getting the servo position to 90
+        self.servo.start(0)
+        for deg in range(91): # loop from 0 to 90
+            duty_cycle = self.deg2duty(deg)
+            self.servo.ChangeDutyCycle(duty_cycle)
+            self.barrier.postition = deg
         self.barrier.state = BarrierState.Open
         self.startTimerForBarrier = time.perf_counter()
-
     
     def closeBarrier(self):
         if self.barrier.state == BarrierState.Closed:
             return
         if time.perf_counter() - self.startTimerForBarrier >= self.openGateTime:
-            servo = GPIO.PWM(self.barrier.port, 50) # GPIO as PWM output, with 50Hz frequency
-            servo.start(0) # generate PWM signal with 7.5% duty cycle
-            servo.ChangeDutyCycle(-7.5) # change duty cycle for getting the servo position to -90
+            self.servo.start(0)
+            for deg in range(91): # loop from 90 to 0
+                while self.isVehicleUnderTollBar(): # prevent from closing if vehicle under barrier
+                    self.updateSensors()
+                duty_cycle = self.deg2duty(deg)
+                self.servo.ChangeDutyCycle(-duty_cycle)
+                self.barrier.postition = 90 - deg
             self.barrier.state = BarrierState.Closed
             self.startTimerForBarrier = 0
