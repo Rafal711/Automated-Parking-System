@@ -3,7 +3,8 @@
 # https://raspi.tv/2013/rpi-gpio-basics-6-using-inputs-and-outputs-together-with-rpi-gpio-pull-ups-and-pull-downs
 
 from enum import Enum
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
+from Mock.GPIO import GPIO # mock gpio as it only runs on rpi
 import time
 
 class SensorLocation(Enum):
