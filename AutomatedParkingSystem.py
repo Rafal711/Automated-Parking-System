@@ -26,4 +26,17 @@ class AutomatedParkingSystem:
             self.barrierHandler.updateSensors()
     
     def runExitGate(self):
-        raise NotImplementedError
+        vehiclePlateNumber = None
+        while True:
+            if self.barrierHandler.barrier.state == BarrierState.Closed and self.barrierHandler.isVehicleBeforeTollBar():
+                carPhoto = self.cameraHandler.takePhoto()
+                if carPhoto is None:
+                    continue
+                vehiclePlateNumber = self.cameraHandler.getVehiclePlateNumber(carPhoto)
+                if self.parkingDb.wasFeePaid():
+                    self.barrierHandler.openBarrier()
+            if self.barrierHandler.barrier.state == BarrierState.Open:
+                self.barrierHandler.closeBarrier()
+                if self.barrierHandler.isVehicleBehindTollBar():
+                    self.parkingDb.releaseCarFromDb(vehiclePlateNumber)
+            self.barrierHandler.updateSensors()

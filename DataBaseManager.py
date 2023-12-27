@@ -89,6 +89,9 @@ class ParkingDB:
         else:
             print("W bazie nie istnieje dany numer")
             return None
+    
+    def wasFeePaid(self):
+        raise NotImplementedError #TODO return bool payment status, take into account the time between leaving and payment
 
 
     def updateFee(self, id, minutes, price_per_hour = 2):
@@ -121,6 +124,9 @@ class ParkingDB:
         
         minutes = self.updateParkingTime(id)
         self.updateFee(id, minutes)
+    
+    def releaseCarFromDb(self, registration):
+        raise NotImplementedError #TODO update Car status (car left parking lot) 
 
 
     def getTableLength(self):
