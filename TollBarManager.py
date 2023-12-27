@@ -3,8 +3,10 @@
 # https://raspi.tv/2013/rpi-gpio-basics-6-using-inputs-and-outputs-together-with-rpi-gpio-pull-ups-and-pull-downs
 
 from enum import Enum
-# import RPi.GPIO as GPIO
-from Mock.GPIO import GPIO # mock gpio as it only runs on rpi
+try:
+    import RPi.GPIO as GPIO
+except:
+    import Mock.GPIO as GPIO # mock gpio as it only runs on rpi
 import time
 
 class SensorLocation(Enum):
@@ -40,9 +42,9 @@ class TollBarManager:
                         Sensor(sensorUnderTollBarPort, SensorLocation.UnderTollBar),
                         Sensor(sensorBehindTollBarPort, SensorLocation.BehindTollBar)]
         # SETUP BARRIER AND SERVO
+        self.barrier = Barrier(barrierPort)
         GPIO.setup(self.barrier.port, GPIO.OUT)
         self.servo = GPIO.PWM(self.barrier.port, 50) # GPIO as PWM output, with 50Hz frequency
-        self.barrier = Barrier(barrierPort)
         self.openGateTime = 7 # time in sec
         self.startTimerForBarrier = 0
         self.endTimer = 0
