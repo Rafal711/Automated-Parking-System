@@ -2,7 +2,6 @@ import unittest
 from CameraManager import CameraManager
 from TollBarManager import SensorLocation, Sensor, BarrierState, Barrier, TollBarManager
 from AutomatedParkingSystem import AutomatedParkingSystem
-import Mock.GPIO as GPIO
 from contextlib import contextmanager
 import threading
 import _thread
@@ -90,11 +89,13 @@ class TestAutomatedParkingSystem(unittest.TestCase):
     def testCarEntersParkingLotScenario(self):
         automatedParkingSys = AutomatedParkingSystem()
         barrierManager = automatedParkingSys.barrierHandler
+        initalNumberOfParkedCars = automatedParkingSys.parkingDb.getNumberOfCarsInAParkingLot()
 
         # scenario step 1: No car near barrier
         automatedParkingSys.executeEntranceGateLogicOnceWithDummyCar()
         self.assertEqual(barrierManager.barrier.state, BarrierState.Closed)
-        #TODO no new car in DB
+        # no new car in DB
+        self.assertEqual(initalNumberOfParkedCars, automatedParkingSys.parkingDb.getNumberOfCarsInAParkingLot())
 
         # scenario step 2: Car before barrier
         barrierManager.getSensorByLocation(SensorLocation.BeforeTollBar).value = True
@@ -102,14 +103,16 @@ class TestAutomatedParkingSystem(unittest.TestCase):
         automatedParkingSys.executeEntranceGateLogicOnceWithDummyCar(dummyCarPlateNumber1)
         self.assertEqual(barrierManager.barrier.postition, 90)
         self.assertEqual(barrierManager.barrier.state, BarrierState.Open)
-        #TODO no new car in DB
+        # no new car in DB
+        self.assertEqual(initalNumberOfParkedCars, automatedParkingSys.parkingDb.getNumberOfCarsInAParkingLot())
 
         # scenario step 3: Car under barrier (new car before barrier, SensorLocation.BeforeTollBar still true)
         barrierManager.getSensorByLocation(SensorLocation.UnderTollBar).value = True
         automatedParkingSys.executeEntranceGateLogicOnceWithDummyCar(dummyCarPlateNumber1)
         self.assertEqual(barrierManager.barrier.postition, 90)
         self.assertEqual(barrierManager.barrier.state, BarrierState.Open)
-        #TODO no new car in DB
+        # no new car in DB
+        self.assertEqual(initalNumberOfParkedCars, automatedParkingSys.parkingDb.getNumberOfCarsInAParkingLot())
 
         # scenario step 4: Car behind barrier
         barrierManager.getSensorByLocation(SensorLocation.UnderTollBar).value = False
@@ -119,7 +122,8 @@ class TestAutomatedParkingSystem(unittest.TestCase):
         automatedParkingSys.executeEntranceGateLogicOnceWithDummyCar(dummyCarPlateNumber1)
         self.assertEqual(barrierManager.barrier.postition, 0)
         self.assertEqual(barrierManager.barrier.state, BarrierState.Closed)
-        #TODO new car in DB, compare with dummyCarPlateNumber1
+        # new car in DB, compare with dummyCarPlateNumber1
+        self.assertTrue(automatedParkingSys.parkingDb.isCarParked(dummyCarPlateNumber1))
         #TODO scenario step 5: new Car behind barrier [alternative]
     
     def testCarExitsParkingLotScenario(self):
@@ -132,22 +136,31 @@ class TestAutomatedParkingSystem(unittest.TestCase):
         # scenario step 1: No car near barrier
         automatedParkingSys.executeExitGateLogicOnceWithDummyCar()
         self.assertEqual(barrierManager.barrier.state, BarrierState.Closed)
-        #TODO car still in Db (no release)
+        #car still in Db (no release)
+        self.assertTrue(automatedParkingSys.parkingDb.isCarParked(dummyCarPlateNumber1))
 
         # scenario step 2: Car before barrier (fee not paid)
         barrierManager.getSensorByLocation(SensorLocation.BeforeTollBar).value = True
         automatedParkingSys.executeExitGateLogicOnceWithDummyCar(dummyCarPlateNumber1)
         self.assertEqual(barrierManager.barrier.postition, 0)
         self.assertEqual(barrierManager.barrier.state, BarrierState.Closed)
-        #TODO car still in Db (no release - fee not paid)
+        # car still in Db (no release - fee not paid)
+        self.assertFalse(automatedParkingSys.parkingDb.wasFeePaid(dummyCarPlateNumber1))
+        self.assertTrue(automatedParkingSys.parkingDb.isCarParked(dummyCarPlateNumber1))
+
 
         # scenario step 3: Car before barrier (fee paid)
-        #TODO update fee - paid
+        # end parking time and calculate fee
+        automatedParkingSys.parkingDb.updateParkingEndTime(dummyCarPlateNumber1)
+        # update fee payment status - paid
+        automatedParkingSys.parkingDb.updatePaymentStatus(dummyCarPlateNumber1)
         barrierManager.getSensorByLocation(SensorLocation.BeforeTollBar).value = True
         automatedParkingSys.executeExitGateLogicOnceWithDummyCar(dummyCarPlateNumber1)
         self.assertEqual(barrierManager.barrier.postition, 90)
         self.assertEqual(barrierManager.barrier.state, BarrierState.Open)
-        #TODO car still in Db (no release - fee paid)
+        # car still in Db (no release - fee paid)
+        self.assertTrue(automatedParkingSys.parkingDb.wasFeePaid(dummyCarPlateNumber1))
+        self.assertTrue(automatedParkingSys.parkingDb.isCarParked(dummyCarPlateNumber1))
 
         # scenario step 4: Car under barrier
         barrierManager.getSensorByLocation(SensorLocation.BeforeTollBar).value = False
@@ -155,7 +168,8 @@ class TestAutomatedParkingSystem(unittest.TestCase):
         automatedParkingSys.executeExitGateLogicOnceWithDummyCar(dummyCarPlateNumber1)
         self.assertEqual(barrierManager.barrier.postition, 90)
         self.assertEqual(barrierManager.barrier.state, BarrierState.Open)
-        #TODO car still in Db (no release)
+        # car still in Db (no release)
+        self.assertTrue(automatedParkingSys.parkingDb.isCarParked(dummyCarPlateNumber1))
 
         # scenario step 5: Car behind barrier
         barrierManager.getSensorByLocation(SensorLocation.UnderTollBar).value = False
@@ -165,7 +179,8 @@ class TestAutomatedParkingSystem(unittest.TestCase):
         automatedParkingSys.executeExitGateLogicOnceWithDummyCar(dummyCarPlateNumber1)
         self.assertEqual(barrierManager.barrier.postition, 0)
         self.assertEqual(barrierManager.barrier.state, BarrierState.Closed)
-        #TODO check if car was released from Db (outside parking lot)
+        # check if car was released from Db (outside parking lot)
+        self.assertFalse(automatedParkingSys.parkingDb.isCarParked(dummyCarPlateNumber1))
 
 
 if __name__ == '__main__':

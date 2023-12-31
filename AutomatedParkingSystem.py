@@ -1,6 +1,6 @@
 from CameraManager import CameraManager
 from TollBarManager import TollBarManager, BarrierState
-from DataBaseManager import ParkingDB
+from DataBaseManager import *
 
 max_capacity = 100
 
@@ -33,7 +33,7 @@ class AutomatedParkingSystem:
                 if carPhoto is None:
                     continue
                 vehiclePlateNumber = self.cameraHandler.getVehiclePlateNumber(carPhoto)
-                if self.parkingDb.wasFeePaid():
+                if self.parkingDb.wasFeePaid(vehiclePlateNumber):
                     self.barrierHandler.openBarrier()
             if self.barrierHandler.barrier.state == BarrierState.Open:
                 self.barrierHandler.closeBarrier()
@@ -57,7 +57,7 @@ class AutomatedParkingSystem:
         executeOnce = True
         while executeOnce:
             if self.barrierHandler.barrier.state == BarrierState.Closed and self.barrierHandler.isVehicleBeforeTollBar():
-                if self.parkingDb.wasFeePaid():
+                if self.parkingDb.wasFeePaid(dummyVehiclePlateNumber):
                     self.barrierHandler.openBarrier()
             if self.barrierHandler.barrier.state == BarrierState.Open:
                 self.barrierHandler.closeBarrier()
