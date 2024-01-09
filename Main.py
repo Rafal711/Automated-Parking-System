@@ -10,7 +10,7 @@ app = Flask(__name__)
 database = ParkingDB()
 
 def getOccupancyData():
-    currently_parked = database.getNumberOfParkedCars()
+    currently_parked = database.getNumberOfCarsInAParkingLot()
     free = max_capacity - currently_parked
     occupancy_percentage = currently_parked / max_capacity * 100
 

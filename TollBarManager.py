@@ -6,7 +6,7 @@ from enum import Enum
 try:
     import RPi.GPIO as GPIO
 except:
-    import Mock.GPIO as GPIO # mock gpio as it only runs on rpi
+    import mock.GPIO as GPIO # mock gpio as it only runs on rpi
 import time
 
 class SensorLocation(Enum):

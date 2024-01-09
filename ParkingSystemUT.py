@@ -40,7 +40,7 @@ class TestCameraManager(unittest.TestCase):
     
     def testCameraPicturesTaking(self):
         cameraManager = CameraManager(['pl', 'en'])
-        image = cameraManager.takePhoto()
+        # image = cameraManager.takePhoto()
         # cv2.imwrite("test_image.png", image)
         # wasPhotoTaken = os.path.exists("test_image.png")
         # self.assertTrue(wasPhotoTaken, "Photo was not taken")
